@@ -47,49 +47,42 @@ export default function NotePanel({ open, note, onClose, onSave }) {
     onSave({ title: title.trim(), content: content.trim(), date, status, tags })
   }
 
+  if (!open) return null
+
   return (
-    <>
-      <div className={'overlay' + (open ? ' visible' : '')} onClick={onClose}></div>
-      <div className={'panel' + (open ? ' open' : '')}>
-        <div className="panel-header">
-          <h2>{note ? 'Editar nota' : 'Nueva nota'}</h2>
-          <button className="panel-close" onClick={onClose}>&times;</button>
+    <div className="doc-overlay">
+      <div className="doc-view">
+        <div className="doc-topbar">
+          <button className="doc-back" onClick={onClose}>← Volver</button>
+          <div className="doc-topbar-right">
+            <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+            <button className="btn-save" onClick={handleSave}>Guardar nota</button>
+          </div>
         </div>
-        <div className="panel-body">
-          <div className="field">
-            <input
-              ref={titleRef}
-              type="text"
-              className="field-title-input"
-              placeholder="Título de la nota"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-            />
+
+        <div className="doc-meta-bar">
+          <div className="doc-meta-item">
+            <label>Fecha</label>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} />
           </div>
 
-          <div className="row-2">
-            <div className="field">
-              <label>Fecha</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-            </div>
-            <div className="field">
-              <label>Estado</label>
-              <div className="status-options">
-                {STATUSES.map(s => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    className={'status-pill' + (status === s.value ? ' sel-' + s.value : '')}
-                    onClick={() => setStatus(s.value)}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
+          <div className="doc-meta-item">
+            <label>Estado</label>
+            <div className="status-options">
+              {STATUSES.map(s => (
+                <button
+                  key={s.value}
+                  type="button"
+                  className={'status-pill' + (status === s.value ? ' sel-' + s.value : '')}
+                  onClick={() => setStatus(s.value)}
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="field">
+          <div className="doc-meta-item doc-meta-tags">
             <label>Etiquetas</label>
             <div className="tags-input-wrap">
               {tags.map(tag => (
@@ -107,21 +100,27 @@ export default function NotePanel({ open, note, onClose, onSave }) {
               />
             </div>
           </div>
+        </div>
 
-          <div className="field">
-            <label>Contenido</label>
+        <div className="doc-page">
+          <div className="doc-page-inner">
+            <input
+              ref={titleRef}
+              type="text"
+              className="doc-title-input"
+              placeholder="Título de la nota"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+            />
             <textarea
+              className="doc-content-textarea"
               placeholder="Escribe aquí los detalles de tu nota..."
               value={content}
               onChange={e => setContent(e.target.value)}
             />
           </div>
         </div>
-        <div className="panel-footer">
-          <button className="btn-secondary" onClick={onClose}>Cancelar</button>
-          <button className="btn-save" onClick={handleSave}>Guardar nota</button>
-        </div>
       </div>
-    </>
+    </div>
   )
 }
