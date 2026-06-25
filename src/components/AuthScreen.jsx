@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
-export default function AuthScreen({ onSignIn, onSignUp }) {
-  const [mode, setMode] = useState('signin') // 'signin' | 'signup'
+export default function AuthScreen({ onSignIn, onSignUp, onSendPasswordReset }) {
+  const [mode, setMode] = useState('signin') // 'signin' | 'signup' | 'recover'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,12 +17,19 @@ export default function AuthScreen({ onSignIn, onSignUp }) {
     if (mode === 'signin') {
       const { error } = await onSignIn(email, password)
       if (error) setError(traducirError(error.message))
-    } else {
+    } else if (mode === 'signup') {
       const { error } = await onSignUp(email, password)
       if (error) {
         setError(traducirError(error.message))
       } else {
         setInfo('Cuenta creada. Si tu proyecto requiere confirmación, revisa tu email; si no, ya puedes entrar.')
+      }
+    } else if (mode === 'recover') {
+      const { error } = await onSendPasswordReset(email)
+      if (error) {
+        setError(traducirError(error.message))
+      } else {
+        setInfo('Te hemos enviado un email con un enlace para crear una nueva contraseña. Revisa también la carpeta de spam.')
       }
     }
     setSubmitting(false)
@@ -35,13 +42,23 @@ export default function AuthScreen({ onSignIn, onSignUp }) {
     return msg
   }
 
+  function switchMode(newMode) {
+    setMode(newMode)
+    setError('')
+    setInfo('')
+  }
+
+  const titles = {
+    signin: 'Entra para ver tus proyectos y notas.',
+    signup: 'Crea una cuenta para empezar a organizarte.',
+    recover: 'Te enviamos un enlace para crear una nueva contraseña.',
+  }
+
   return (
     <div className="auth-screen">
       <div className="auth-card">
         <div className="brand auth-brand"><span className="dot"></span> Cuaderno</div>
-        <p className="auth-subtitle">
-          {mode === 'signin' ? 'Entra para ver tus proyectos y notas.' : 'Crea una cuenta para empezar a organizarte.'}
-        </p>
+        <p className="auth-subtitle">{titles[mode]}</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="field">
@@ -55,34 +72,57 @@ export default function AuthScreen({ onSignIn, onSignUp }) {
               autoComplete="email"
             />
           </div>
-          <div className="field">
-            <label>Contraseña</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-            />
-          </div>
+
+          {mode !== 'recover' && (
+            <div className="field">
+              <label>Contraseña</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              />
+            </div>
+          )}
+
+          {mode === 'signin' && (
+            <button
+              type="button"
+              className="auth-forgot"
+              onClick={() => switchMode('recover')}
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
 
           {error && <div className="auth-message auth-error">{error}</div>}
           {info && <div className="auth-message auth-info">{info}</div>}
 
           <button type="submit" className="btn-primary auth-submit" disabled={submitting}>
-            {submitting ? 'Un momento...' : mode === 'signin' ? 'Entrar' : 'Crear cuenta'}
+            {submitting
+              ? 'Un momento...'
+              : mode === 'signin' ? 'Entrar'
+              : mode === 'signup' ? 'Crear cuenta'
+              : 'Enviar enlace de recuperación'}
           </button>
         </form>
 
-        <button
-          type="button"
-          className="auth-toggle"
-          onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setInfo('') }}
-        >
-          {mode === 'signin' ? '¿No tienes cuenta? Crea una' : '¿Ya tienes cuenta? Entra'}
-        </button>
+        {mode === 'recover' ? (
+          <button type="button" className="auth-toggle" onClick={() => switchMode('signin')}>
+            ← Volver a entrar
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="auth-toggle"
+            onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
+          >
+            {mode === 'signin' ? '¿No tienes cuenta? Crea una' : '¿Ya tienes cuenta? Entra'}
+          </button>
+        )}
       </div>
     </div>
   )

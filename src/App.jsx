@@ -2,20 +2,30 @@ import { useState, useMemo } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useData } from './hooks/useData'
 import AuthScreen from './components/AuthScreen'
+import ResetPasswordScreen from './components/ResetPasswordScreen'
 import Sidebar from './components/Sidebar'
 import NoteCard from './components/NoteCard'
 import NotePanel from './components/NotePanel'
 import ProjectModal from './components/ProjectModal'
 
 export default function App() {
-  const { user, loading: authLoading, signIn, signUp, signOut } = useAuth()
+  const {
+    user, loading: authLoading, recoveryMode,
+    signIn, signUp, signOut, sendPasswordReset, updatePassword,
+  } = useAuth()
 
   if (authLoading) {
     return <div className="app-loading">Cargando...</div>
   }
 
+  // Si llega desde el enlace de recuperación de contraseña del email,
+  // mostramos esta pantalla antes que nada, incluso si ya hay sesión activa.
+  if (recoveryMode) {
+    return <ResetPasswordScreen onUpdatePassword={updatePassword} onSignOut={signOut} />
+  }
+
   if (!user) {
-    return <AuthScreen onSignIn={signIn} onSignUp={signUp} />
+    return <AuthScreen onSignIn={signIn} onSignUp={signUp} onSendPasswordReset={sendPasswordReset} />
   }
 
   return <MainApp user={user} onSignOut={signOut} />
