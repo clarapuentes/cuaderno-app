@@ -8,6 +8,7 @@ import NoteCard from './components/NoteCard'
 import NotePanel from './components/NotePanel'
 import ProjectModal from './components/ProjectModal'
 import NewItemMenu from './components/NewItemMenu'
+import ShareModal from './components/ShareModal'
 
 export default function App() {
   const {
@@ -34,10 +35,11 @@ export default function App() {
 
 function MainApp({ user, onSignOut }) {
   const {
-    projects, notes, listItems, loading, error,
+    projects, notes, listItems, members, loading, error,
     createProject, deleteProject,
     createNote, updateNote, deleteNote,
     saveListItems, toggleListItem,
+    inviteMember, removeMember,
   } = useData(user.id)
 
   const [currentProjectId, setCurrentProjectId] = useState(null)
@@ -49,9 +51,12 @@ function MainApp({ user, onSignOut }) {
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   const [newItemMenuOpen, setNewItemMenuOpen] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [shareProjectId, setShareProjectId] = useState(null)
 
   const activeProjectId = currentProjectId ?? (projects[0]?.id ?? null)
   const activeProject = projects.find(p => p.id === activeProjectId) ?? null
+  const shareProject = projects.find(p => p.id === shareProjectId) ?? null
+  const shareProjectMembers = members.filter(m => m.project_id === shareProjectId)
 
   const filteredNotes = useMemo(() => {
     return notes
@@ -123,6 +128,17 @@ function MainApp({ user, onSignOut }) {
     setEditingNote(null)
   }
 
+  async function handleRemoveMember(memberRowId, projectId) {
+    const removingSelf = members.some(
+      m => m.id === memberRowId && m.user_id === user.id && m.project_id === projectId
+    )
+    await removeMember(memberRowId, projectId)
+    if (removingSelf) {
+      setShareProjectId(null)
+      if (activeProjectId === projectId) setCurrentProjectId(null)
+    }
+  }
+
   async function handleCreateProject(name, color) {
     const project = await createProject(name, color)
     if (project) {
@@ -140,6 +156,7 @@ function MainApp({ user, onSignOut }) {
         onSelectProject={setCurrentProjectId}
         onNewProject={() => setProjectModalOpen(true)}
         onDeleteProject={handleDeleteProject}
+        onShareProject={setShareProjectId}
         userEmail={user.email}
         onSignOut={onSignOut}
         mobileOpen={mobileSidebarOpen}
@@ -228,6 +245,16 @@ function MainApp({ user, onSignOut }) {
         open={projectModalOpen}
         onClose={() => setProjectModalOpen(false)}
         onCreate={handleCreateProject}
+      />
+
+      <ShareModal
+        open={shareProjectId !== null}
+        project={shareProject}
+        members={shareProjectMembers}
+        currentUserId={user.id}
+        onClose={() => setShareProjectId(null)}
+        onInvite={inviteMember}
+        onRemove={handleRemoveMember}
       />
     </div>
   )
