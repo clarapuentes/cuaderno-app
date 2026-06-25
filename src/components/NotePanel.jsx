@@ -81,12 +81,11 @@ export default function NotePanel({ open, note, noteType, listItems, onClose, on
     <div className="doc-overlay">
       <div className="doc-view">
         <div className="doc-topbar">
-          <button className="doc-back" onClick={onClose}>← Volver</button>
+          <button className="doc-back" onClick={onClose} aria-label="Volver">←</button>
           <div className="doc-topbar-right">
             {note && (
               <button className="btn-delete" onClick={handleDelete}>Eliminar</button>
             )}
-            <button className="btn-secondary" onClick={onClose}>Cancelar</button>
             <button className="btn-save" onClick={handleSave}>
               {isList ? 'Guardar lista' : 'Guardar nota'}
             </button>
