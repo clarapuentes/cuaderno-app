@@ -243,7 +243,7 @@ input, textarea, select{ font-family: inherit; }
   align-items:center;
   gap:12px;
 }
-.project-title-dot{ width:13px; height:13px; border-radius:50%; }
+.project-title-dot{ width:13px; height:13px; min-width:13px; border-radius:50%; flex-shrink:0; }
 .project-meta{ color: var(--muted); font-size: 13.5px; }
 
 .toolbar{
@@ -694,7 +694,10 @@ input, textarea, select{ font-family: inherit; }
 .doc-content-textarea::placeholder{ color:#B8B4A8; }
 
 @media (max-width: 760px){
-  .doc-topbar{ padding: 12px 16px; }
+  .doc-topbar{
+    padding: 12px 16px;
+    padding-top: max(20px, calc(env(safe-area-inset-top) + 12px));
+  }
   .doc-meta-bar{ padding: 12px 16px; gap:16px; }
   .doc-page{ padding: 28px 18px 80px; }
   .doc-title-input{ font-size: 26px; }
@@ -801,12 +804,43 @@ input, textarea, select{ font-family: inherit; }
   .mobile-menu-btn{ display:flex; }
   .main{
     padding: 20px;
-    padding-top: max(28px, env(safe-area-inset-top));
+    padding-top: max(56px, calc(env(safe-area-inset-top) + 36px));
   }
   .main-header{ margin-bottom: 18px; }
   .project-title{ font-size:22px; }
   .project-title-row{ margin-bottom: 2px; }
 }
+
+/* ===== MENÚ CONTEXTUAL (click derecho / pulsación larga) ===== */
+.context-menu{
+  position:fixed;
+  z-index: 60;
+  background: var(--paper);
+  border:1px solid var(--line);
+  border-radius:10px;
+  box-shadow: 0 10px 30px rgba(30,28,24,0.18);
+  padding:6px;
+  display:flex;
+  flex-direction:column;
+  min-width: 160px;
+  animation: context-menu-in 0.12s ease;
+}
+@keyframes context-menu-in{
+  from{ opacity:0; transform: scale(0.96); }
+  to{ opacity:1; transform: scale(1); }
+}
+.context-menu button{
+  background:none;
+  border:none;
+  text-align:left;
+  padding: 10px 12px;
+  border-radius:7px;
+  font-size:13.5px;
+  color: var(--ink);
+}
+.context-menu button:hover{ background:#F2F0EA; }
+.context-menu button.context-menu-danger{ color:#A6444A; }
+.context-menu button.context-menu-danger:hover{ background: var(--rose-soft); }
 
 /* ===== MENÚ "NUEVO" (nota o lista) ===== */
 .new-item-wrap{ position:relative; }
