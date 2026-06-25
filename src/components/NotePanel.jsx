@@ -7,7 +7,7 @@ const STATUSES = [
   { value: 'completada', label: 'Hecho' },
 ]
 
-export default function NotePanel({ open, note, noteType, listItems, onClose, onSave }) {
+export default function NotePanel({ open, note, noteType, listItems, onClose, onSave, onDelete }) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [date, setDate] = useState('')
@@ -65,6 +65,16 @@ export default function NotePanel({ open, note, noteType, listItems, onClose, on
     }
   }
 
+  function handleDelete() {
+    if (!note) return
+    const msg = isList
+      ? '¿Eliminar esta lista? Esta acción no se puede deshacer.'
+      : '¿Eliminar esta nota? Esta acción no se puede deshacer.'
+    if (window.confirm(msg)) {
+      onDelete(note.id)
+    }
+  }
+
   if (!open) return null
 
   return (
@@ -73,6 +83,9 @@ export default function NotePanel({ open, note, noteType, listItems, onClose, on
         <div className="doc-topbar">
           <button className="doc-back" onClick={onClose}>← Volver</button>
           <div className="doc-topbar-right">
+            {note && (
+              <button className="btn-delete" onClick={handleDelete}>Eliminar</button>
+            )}
             <button className="btn-secondary" onClick={onClose}>Cancelar</button>
             <button className="btn-save" onClick={handleSave}>
               {isList ? 'Guardar lista' : 'Guardar nota'}

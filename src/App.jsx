@@ -82,8 +82,9 @@ function MainApp({ user, onSignOut }) {
   }
 
   async function handleDeleteNote(id) {
-    if (!window.confirm('¿Eliminar este elemento? Esta acción no se puede deshacer.')) return
     await deleteNote(id)
+    setPanelOpen(false)
+    setEditingNote(null)
   }
 
   function openNewItemMenu() {
@@ -209,7 +210,6 @@ function MainApp({ user, onSignOut }) {
           projectNoteCount={projectNoteCount}
           getItemsForNote={getItemsForNote}
           onEdit={openEditNote}
-          onDelete={handleDeleteNote}
           onToggleItem={toggleListItem}
         />
       </main>
@@ -221,6 +221,7 @@ function MainApp({ user, onSignOut }) {
         listItems={editingNote ? getItemsForNote(editingNote.id) : []}
         onClose={() => { setPanelOpen(false); setEditingNote(null) }}
         onSave={handleSaveNote}
+        onDelete={handleDeleteNote}
       />
 
       <ProjectModal
@@ -232,7 +233,7 @@ function MainApp({ user, onSignOut }) {
   )
 }
 
-function NotesGrid({ loading, activeProject, filteredNotes, projectNoteCount, getItemsForNote, onEdit, onDelete, onToggleItem }) {
+function NotesGrid({ loading, activeProject, filteredNotes, projectNoteCount, getItemsForNote, onEdit, onToggleItem }) {
   if (loading) {
     return <div className="notes-grid"><div className="empty-state full-row"><p>Cargando tus notas...</p></div></div>
   }
@@ -280,7 +281,6 @@ function NotesGrid({ loading, activeProject, filteredNotes, projectNoteCount, ge
           items={note.type === 'lista' ? getItemsForNote(note.id) : []}
           projectColor={activeProject.color}
           onEdit={onEdit}
-          onDelete={onDelete}
           onToggleItem={onToggleItem}
         />
       ))}

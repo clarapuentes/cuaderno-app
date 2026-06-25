@@ -1,5 +1,3 @@
-import { useContextMenu, ContextMenu } from './ContextMenu'
-
 const STATUS_LABEL = {
   pendiente: 'Pendiente',
   'en-progreso': 'En progreso',
@@ -15,19 +13,17 @@ function formatDate(isoStr) {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function NoteCard({ note, projectColor, items, onEdit, onDelete, onToggleItem }) {
+export default function NoteCard({ note, projectColor, items, onEdit, onToggleItem }) {
   const isList = note.type === 'lista'
   const visibleItems = isList ? items.slice(0, MAX_PREVIEW_ITEMS) : []
   const doneCount = isList ? items.filter(it => it.done).length : 0
   const remainingCount = isList ? items.length - visibleItems.length : 0
-  const { menuState, bind, closeMenu } = useContextMenu()
 
   return (
     <div
       className="note-card"
       style={{ '--tab-color': projectColor }}
       onClick={() => onEdit(note)}
-      {...bind}
     >
       <div className="note-card-top">
         <div className="note-title">
@@ -76,17 +72,6 @@ export default function NoteCard({ note, projectColor, items, onEdit, onDelete, 
       <div className="note-card-bottom">
         <span>{formatDate(note.date)}</span>
       </div>
-
-      {menuState && (
-        <ContextMenu x={menuState.x} y={menuState.y} onClose={closeMenu}>
-          <button type="button" onClick={() => onEdit(note)}>
-            Editar
-          </button>
-          <button type="button" className="context-menu-danger" onClick={() => onDelete(note.id)}>
-            Eliminar
-          </button>
-        </ContextMenu>
-      )}
     </div>
   )
 }
