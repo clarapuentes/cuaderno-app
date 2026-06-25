@@ -165,13 +165,6 @@ input, textarea, select{ font-family: inherit; }
 }
 .project-item:hover .project-delete{ opacity:1; }
 .project-delete:hover{ color: #E3A0A4; background: rgba(255,255,255,0.08); }
-.project-share{
-  background:none; border:none; color:#7E7A70;
-  font-size:13px; padding:2px 5px; border-radius:5px;
-  opacity:0; transition: opacity 0.15s, color 0.15s;
-}
-.project-item:hover .project-share{ opacity:1; }
-.project-share:hover{ color:#A7C5E8; background: rgba(255,255,255,0.08); }
 
 .new-project-btn{
   margin-top: 4px;
@@ -755,60 +748,6 @@ input, textarea, select{ font-family: inherit; }
 }
 .color-swatch.selected{ border-color: var(--ink); }
 .modal-mini-actions{ display:flex; gap:8px; margin-top:4px; }
-
-/* ===== MODAL DE COMPARTIR PROYECTO ===== */
-.share-modal-box{ width: 420px; }
-.share-modal-hint{
-  font-size:13px;
-  color: var(--ink-soft);
-  margin:0;
-  line-height:1.5;
-}
-.share-invite-form{
-  display:flex;
-  gap:8px;
-}
-.share-invite-form .modal-mini-input{ flex:1; }
-.share-invite-form .btn-save{ flex:none; padding: 10px 18px; }
-.share-members-list{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-  max-height: 220px;
-  overflow-y:auto;
-}
-.share-members-label{
-  font-size:11px; font-weight:600; color: var(--ink-soft);
-  text-transform:uppercase; letter-spacing:0.04em;
-  margin-bottom:2px;
-}
-.share-member-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding: 8px 4px;
-  border-bottom: 1px solid var(--line);
-}
-.share-member-row:last-child{ border-bottom:none; }
-.share-member-email{
-  font-size:13.5px;
-  color: var(--ink);
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-}
-.share-member-you{ color: var(--muted); font-weight:400; }
-.share-member-remove{
-  background:none;
-  border:1px solid var(--line);
-  color: var(--ink-soft);
-  font-size:12px;
-  padding: 4px 10px;
-  border-radius:20px;
-  flex-shrink:0;
-}
-.share-member-remove:hover{ background: var(--rose-soft); color:#A6444A; border-color:#E7C7C9; }
 
 /* ===== AUTH SCREEN ===== */
 .auth-screen{

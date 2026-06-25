@@ -1,6 +1,6 @@
 export default function Sidebar({
   projects, notes, currentProjectId, onSelectProject, onNewProject, onDeleteProject,
-  onShareProject, userEmail, onSignOut, mobileOpen, onCloseMobile,
+  userEmail, onSignOut, mobileOpen, onCloseMobile,
 }) {
   function handleSelect(id) {
     onSelectProject(id)
@@ -42,13 +42,6 @@ export default function Sidebar({
                   </span>
                   <span className="project-item-right">
                     <span className="project-count">{count}</span>
-                    <button
-                      className="project-share"
-                      title="Compartir proyecto"
-                      onClick={(e) => { e.stopPropagation(); onShareProject(p.id) }}
-                    >
-                      ⤴
-                    </button>
                     <button
                       className="project-delete"
                       title="Eliminar proyecto"

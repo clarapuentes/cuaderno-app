@@ -5,7 +5,6 @@ export function useData(userId) {
   const [projects, setProjects] = useState([])
   const [notes, setNotes] = useState([])
   const [listItems, setListItems] = useState([])
-  const [members, setMembers] = useState([]) // [{ id, project_id, user_id, email, added_at }]
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -24,21 +23,9 @@ export function useData(userId) {
     if (notesRes.error) setError(notesRes.error.message)
     if (itemsRes.error) setError(itemsRes.error.message)
 
-    const loadedProjects = projectsRes.data ?? []
-    setProjects(loadedProjects)
+    setProjects(projectsRes.data ?? [])
     setNotes(notesRes.data ?? [])
     setListItems(itemsRes.data ?? [])
-
-    // Cargamos los miembros de todos los proyectos visibles, uno por uno
-    // (son pocos en la práctica, así que el coste es insignificante).
-    const memberResults = await Promise.all(
-      loadedProjects.map(p => supabase.rpc('get_project_members', { p_project_id: p.id }))
-    )
-    const allMembers = memberResults.flatMap((res, i) =>
-      (res.data ?? []).map(m => ({ ...m, project_id: loadedProjects[i].id }))
-    )
-    setMembers(allMembers)
-
     setLoading(false)
   }, [userId])
 
@@ -47,7 +34,7 @@ export function useData(userId) {
   }, [loadAll])
 
   // ---------- PROYECTOS ----------
-  async function createProject(name, color, userEmail) {
+  async function createProject(name, color) {
     const { data, error } = await supabase
       .from('projects')
       .insert({ name, color, user_id: userId })
@@ -55,14 +42,6 @@ export function useData(userId) {
       .single()
     if (error) { setError(error.message); return null }
     setProjects(prev => [...prev, data])
-
-    // Un trigger en la base de datos añade automáticamente al creador
-    // como miembro; aquí solo reflejamos ese estado en la interfaz.
-    setMembers(prev => [
-      ...prev,
-      { id: `local-${data.id}`, project_id: data.id, user_id: userId, email: userEmail ?? null, added_at: new Date().toISOString() },
-    ])
-
     return data
   }
 
@@ -71,37 +50,6 @@ export function useData(userId) {
     if (error) { setError(error.message); return false }
     setProjects(prev => prev.filter(p => p.id !== id))
     setNotes(prev => prev.filter(n => n.project_id !== id))
-    setMembers(prev => prev.filter(m => m.project_id !== id))
-    return true
-  }
-
-  // ---------- MIEMBROS ----------
-  // Devuelve: 'ok' | 'user_not_found' | 'already_member' | 'not_authorized' | 'error'
-  async function inviteMember(projectId, email) {
-    const { data, error } = await supabase.rpc('invite_member_by_email', {
-      p_project_id: projectId,
-      p_email: email,
-    })
-    if (error) { setError(error.message); return 'error' }
-    if (data === 'ok') {
-      const { data: memberRows } = await supabase.rpc('get_project_members', { p_project_id: projectId })
-      setMembers(prev => [
-        ...prev.filter(m => m.project_id !== projectId),
-        ...(memberRows ?? []).map(m => ({ ...m, project_id: projectId })),
-      ])
-    }
-    return data
-  }
-
-  async function removeMember(memberRowId, projectId) {
-    const { error } = await supabase.from('project_members').delete().eq('id', memberRowId)
-    if (error) { setError(error.message); return false }
-    setMembers(prev => prev.filter(m => m.id !== memberRowId))
-    // Si me he quitado a mí misma del proyecto, ya no debería verlo más.
-    const stillMember = members.some(m => m.project_id === projectId && m.user_id === userId && m.id !== memberRowId)
-    if (!stillMember) {
-      setProjects(prev => prev.filter(p => p.id !== projectId))
-    }
     return true
   }
 
@@ -138,8 +86,6 @@ export function useData(userId) {
   }
 
   // ---------- ITEMS DE LISTA ----------
-  // Sincroniza el array completo de items de una lista de una sola vez:
-  // borra los que ya no están, actualiza los existentes y crea los nuevos.
   async function saveListItems(noteId, items) {
     const previous = listItems.filter(it => it.note_id === noteId)
     const previousIds = new Set(previous.map(it => it.id))
@@ -179,7 +125,6 @@ export function useData(userId) {
     const failed = results.find(r => r.error)
     if (failed) { setError(failed.error.message); return false }
 
-    // Releemos los items de esta nota desde el servidor para tener IDs reales.
     const { data, error } = await supabase
       .from('list_items')
       .select('*')
@@ -205,11 +150,10 @@ export function useData(userId) {
   }
 
   return {
-    projects, notes, listItems, members, loading, error,
+    projects, notes, listItems, loading, error,
     createProject, deleteProject,
     createNote, updateNote, deleteNote,
     saveListItems, toggleListItem,
-    inviteMember, removeMember,
     reload: loadAll,
   }
 }
