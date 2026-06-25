@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import ListEditor, { newListItem } from './ListEditor'
 
 const STATUSES = [
   { value: 'pendiente', label: 'Pendiente' },
@@ -6,14 +7,18 @@ const STATUSES = [
   { value: 'completada', label: 'Hecho' },
 ]
 
-export default function NotePanel({ open, note, onClose, onSave }) {
+export default function NotePanel({ open, note, noteType, listItems, onClose, onSave }) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [date, setDate] = useState('')
   const [status, setStatus] = useState('pendiente')
   const [tags, setTags] = useState([])
   const [tagInput, setTagInput] = useState('')
+  const [items, setItems] = useState([])
   const titleRef = useRef(null)
+
+  const type = note ? note.type : (noteType || 'nota')
+  const isList = type === 'lista'
 
   useEffect(() => {
     if (!open) return
@@ -23,9 +28,14 @@ export default function NotePanel({ open, note, onClose, onSave }) {
     setStatus(note?.status ?? 'pendiente')
     setTags(note?.tags ?? [])
     setTagInput('')
+    setItems(
+      note
+        ? (listItems ?? []).map(it => ({ ...it }))
+        : [newListItem('')]
+    )
     const t = setTimeout(() => titleRef.current?.focus(), 200)
     return () => clearTimeout(t)
-  }, [open, note])
+  }, [open, note, listItems])
 
   function addTag(e) {
     if (e.key !== 'Enter') return
@@ -44,7 +54,15 @@ export default function NotePanel({ open, note, onClose, onSave }) {
       titleRef.current?.focus()
       return
     }
-    onSave({ title: title.trim(), content: content.trim(), date, status, tags })
+
+    if (isList) {
+      const cleanItems = items
+        .map((it, i) => ({ ...it, text: it.text.trim(), position: i }))
+        .filter(it => it.text !== '')
+      onSave({ title: title.trim(), content: '', date, status, tags, type: 'lista' }, cleanItems)
+    } else {
+      onSave({ title: title.trim(), content: content.trim(), date, status, tags, type: 'nota' }, null)
+    }
   }
 
   if (!open) return null
@@ -56,7 +74,9 @@ export default function NotePanel({ open, note, onClose, onSave }) {
           <button className="doc-back" onClick={onClose}>← Volver</button>
           <div className="doc-topbar-right">
             <button className="btn-secondary" onClick={onClose}>Cancelar</button>
-            <button className="btn-save" onClick={handleSave}>Guardar nota</button>
+            <button className="btn-save" onClick={handleSave}>
+              {isList ? 'Guardar lista' : 'Guardar nota'}
+            </button>
           </div>
         </div>
 
@@ -108,16 +128,21 @@ export default function NotePanel({ open, note, onClose, onSave }) {
               ref={titleRef}
               type="text"
               className="doc-title-input"
-              placeholder="Título de la nota"
+              placeholder={isList ? 'Título de la lista' : 'Título de la nota'}
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
-            <textarea
-              className="doc-content-textarea"
-              placeholder="Escribe aquí los detalles de tu nota..."
-              value={content}
-              onChange={e => setContent(e.target.value)}
-            />
+
+            {isList ? (
+              <ListEditor items={items} onChange={setItems} />
+            ) : (
+              <textarea
+                className="doc-content-textarea"
+                placeholder="Escribe aquí los detalles de tu nota..."
+                value={content}
+                onChange={e => setContent(e.target.value)}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar'
 import NoteCard from './components/NoteCard'
 import NotePanel from './components/NotePanel'
 import ProjectModal from './components/ProjectModal'
+import NewItemMenu from './components/NewItemMenu'
 
 export default function App() {
   const {
@@ -33,9 +34,10 @@ export default function App() {
 
 function MainApp({ user, onSignOut }) {
   const {
-    projects, notes, loading, error,
+    projects, notes, listItems, loading, error,
     createProject, deleteProject,
     createNote, updateNote, deleteNote,
+    saveListItems, toggleListItem,
   } = useData(user.id)
 
   const [currentProjectId, setCurrentProjectId] = useState(null)
@@ -43,7 +45,10 @@ function MainApp({ user, onSignOut }) {
   const [statusFilter, setStatusFilter] = useState('')
   const [panelOpen, setPanelOpen] = useState(false)
   const [editingNote, setEditingNote] = useState(null)
+  const [newNoteType, setNewNoteType] = useState('nota')
   const [projectModalOpen, setProjectModalOpen] = useState(false)
+  const [newItemMenuOpen, setNewItemMenuOpen] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   const activeProjectId = currentProjectId ?? (projects[0]?.id ?? null)
   const activeProject = projects.find(p => p.id === activeProjectId) ?? null
@@ -61,6 +66,10 @@ function MainApp({ user, onSignOut }) {
 
   const projectNoteCount = notes.filter(n => n.project_id === activeProjectId).length
 
+  function getItemsForNote(noteId) {
+    return listItems.filter(it => it.note_id === noteId)
+  }
+
   async function handleDeleteProject(id) {
     const project = projects.find(p => p.id === id)
     const count = notes.filter(n => n.project_id === id).length
@@ -73,16 +82,22 @@ function MainApp({ user, onSignOut }) {
   }
 
   async function handleDeleteNote(id) {
-    if (!window.confirm('¿Eliminar esta nota? Esta acción no se puede deshacer.')) return
+    if (!window.confirm('¿Eliminar este elemento? Esta acción no se puede deshacer.')) return
     await deleteNote(id)
   }
 
-  function openNewNote() {
+  function openNewItemMenu() {
     if (!activeProjectId) {
-      window.alert('Crea primero un proyecto para poder añadir notas.')
+      window.alert('Crea primero un proyecto para poder añadir notas o listas.')
       return
     }
+    setNewItemMenuOpen(true)
+  }
+
+  function chooseNewType(type) {
+    setNewItemMenuOpen(false)
     setEditingNote(null)
+    setNewNoteType(type)
     setPanelOpen(true)
   }
 
@@ -91,11 +106,17 @@ function MainApp({ user, onSignOut }) {
     setPanelOpen(true)
   }
 
-  async function handleSaveNote(values) {
+  async function handleSaveNote(values, items) {
     if (editingNote) {
       await updateNote(editingNote.id, values)
+      if (values.type === 'lista' && items) {
+        await saveListItems(editingNote.id, items)
+      }
     } else {
-      await createNote({ ...values, project_id: activeProjectId })
+      const created = await createNote({ ...values, project_id: activeProjectId })
+      if (created && values.type === 'lista' && items && items.length > 0) {
+        await saveListItems(created.id, items)
+      }
     }
     setPanelOpen(false)
     setEditingNote(null)
@@ -120,20 +141,31 @@ function MainApp({ user, onSignOut }) {
         onDeleteProject={handleDeleteProject}
         userEmail={user.email}
         onSignOut={onSignOut}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
       <main className="main">
         <div className="main-header">
           <div className="project-title-wrap">
-            <div className="project-title">
-              <span className="project-title-dot" style={{ background: activeProject?.color ?? 'transparent' }}></span>
-              <span>{activeProject ? activeProject.name : 'Sin proyectos'}</span>
+            <div className="project-title-row">
+              <button
+                className="mobile-menu-btn"
+                onClick={() => setMobileSidebarOpen(true)}
+                aria-label="Abrir proyectos"
+              >
+                ☰
+              </button>
+              <div className="project-title">
+                <span className="project-title-dot" style={{ background: activeProject?.color ?? 'transparent' }}></span>
+                <span>{activeProject ? activeProject.name : 'Sin proyectos'}</span>
+              </div>
             </div>
             <div className="project-meta">
               {loading
                 ? 'Cargando...'
                 : activeProject
-                  ? (projectNoteCount === 1 ? '1 nota' : `${projectNoteCount} notas`)
+                  ? (projectNoteCount === 1 ? '1 elemento' : `${projectNoteCount} elementos`)
                   : 'Crea un proyecto para empezar a tomar notas'}
             </div>
           </div>
@@ -145,7 +177,7 @@ function MainApp({ user, onSignOut }) {
               </svg>
               <input
                 type="text"
-                placeholder="Buscar notas..."
+                placeholder="Buscar..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -156,7 +188,15 @@ function MainApp({ user, onSignOut }) {
               <option value="en-progreso">En progreso</option>
               <option value="completada">Completada</option>
             </select>
-            <button className="btn-primary" onClick={openNewNote}>+ Nueva nota</button>
+            <div className="new-item-wrap">
+              <button className="btn-primary" onClick={openNewItemMenu}>+ Nuevo</button>
+              <NewItemMenu
+                open={newItemMenuOpen}
+                onClose={() => setNewItemMenuOpen(false)}
+                onChooseNote={() => chooseNewType('nota')}
+                onChooseList={() => chooseNewType('lista')}
+              />
+            </div>
           </div>
         </div>
 
@@ -167,14 +207,18 @@ function MainApp({ user, onSignOut }) {
           activeProject={activeProject}
           filteredNotes={filteredNotes}
           projectNoteCount={projectNoteCount}
+          getItemsForNote={getItemsForNote}
           onEdit={openEditNote}
           onDelete={handleDeleteNote}
+          onToggleItem={toggleListItem}
         />
       </main>
 
       <NotePanel
         open={panelOpen}
         note={editingNote}
+        noteType={newNoteType}
+        listItems={editingNote ? getItemsForNote(editingNote.id) : []}
         onClose={() => { setPanelOpen(false); setEditingNote(null) }}
         onSave={handleSaveNote}
       />
@@ -188,7 +232,7 @@ function MainApp({ user, onSignOut }) {
   )
 }
 
-function NotesGrid({ loading, activeProject, filteredNotes, projectNoteCount, onEdit, onDelete }) {
+function NotesGrid({ loading, activeProject, filteredNotes, projectNoteCount, getItemsForNote, onEdit, onDelete, onToggleItem }) {
   if (loading) {
     return <div className="notes-grid"><div className="empty-state full-row"><p>Cargando tus notas...</p></div></div>
   }
@@ -212,13 +256,13 @@ function NotesGrid({ loading, activeProject, filteredNotes, projectNoteCount, on
           {projectNoteCount === 0 ? (
             <>
               <div className="emoji">📝</div>
-              <h3>Este proyecto aún no tiene notas</h3>
-              <p>Pulsa "Nueva nota" para escribir tu primera idea, tarea o recordatorio.</p>
+              <h3>Este proyecto aún no tiene nada</h3>
+              <p>Pulsa "Nuevo" para crear tu primera nota o lista de tareas.</p>
             </>
           ) : (
             <>
               <div className="emoji">🔍</div>
-              <h3>No hay notas que coincidan</h3>
+              <h3>No hay nada que coincida</h3>
               <p>Prueba a cambiar el texto de búsqueda o el filtro de estado.</p>
             </>
           )}
@@ -233,9 +277,11 @@ function NotesGrid({ loading, activeProject, filteredNotes, projectNoteCount, on
         <NoteCard
           key={note.id}
           note={note}
+          items={note.type === 'lista' ? getItemsForNote(note.id) : []}
           projectColor={activeProject.color}
           onEdit={onEdit}
           onDelete={onDelete}
+          onToggleItem={onToggleItem}
         />
       ))}
     </div>
