@@ -47,7 +47,7 @@ export function useData(userId) {
   }, [loadAll])
 
   // ---------- PROYECTOS ----------
-  async function createProject(name, color) {
+  async function createProject(name, color, userEmail) {
     const { data, error } = await supabase
       .from('projects')
       .insert({ name, color, user_id: userId })
@@ -56,9 +56,12 @@ export function useData(userId) {
     if (error) { setError(error.message); return null }
     setProjects(prev => [...prev, data])
 
-    // El dueño se añade a sí mismo como primer miembro.
-    const { data: memberRows } = await supabase.rpc('get_project_members', { p_project_id: data.id })
-    setMembers(prev => [...prev, ...(memberRows ?? []).map(m => ({ ...m, project_id: data.id }))])
+    // Un trigger en la base de datos añade automáticamente al creador
+    // como miembro; aquí solo reflejamos ese estado en la interfaz.
+    setMembers(prev => [
+      ...prev,
+      { id: `local-${data.id}`, project_id: data.id, user_id: userId, email: userEmail ?? null, added_at: new Date().toISOString() },
+    ])
 
     return data
   }

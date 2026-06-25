@@ -140,7 +140,7 @@ function MainApp({ user, onSignOut }) {
   }
 
   async function handleCreateProject(name, color) {
-    const project = await createProject(name, color)
+    const project = await createProject(name, color, user.email)
     if (project) {
       setCurrentProjectId(project.id)
       setProjectModalOpen(false)
